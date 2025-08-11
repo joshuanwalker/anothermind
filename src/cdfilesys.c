@@ -5,7 +5,6 @@
 #include "dummypsyq.h"
 
 
-int cdTransferReady = 0;
 int cdState = 0; 
 int cdReadStartSector = 0;
 int cdReadByteCount = 0;
@@ -34,14 +33,12 @@ typedef struct {
 
 unsigned char cdPosDatTable[0x6190]; 
 
-void getCdFileSectorInfo(int* outSectorInfo, int logicalOffset, int resourceType);
+void getCdFileSectorInfo(CdSectorInfo* out, int logicalOffset, int resourceType);
 void loadRawSectorData(int startSector, int length, char* destination);
 void loadCdPosTablefromCd(void);
 int loadByFileIdGroupId(int fileIndex, int resourceType, char* destBuffer, int maxSize);
-bool WaitForCdIdle(int nonBlocking);
-int isDebugAllowed(void);
-void SetCdBusyStatus(int newCdBusyStatus);
-void resetCdTransferReadyFlag(void);
+int isDebugDisabled(void);
+int getFileCountInGroup(int fileGroupIndex);
 
 
 
@@ -70,7 +67,15 @@ void getCdFileSectorInfo(CdSectorInfo* out, int logicalOffset, int resourceType)
 
 void loadRawSectorData(int startSector, int length, char* destination)
 {
+    int bytesRead = 0;
     
+    cdIsoFile = al_fopen(al_path_cstr(romPath, ALLEGRO_NATIVE_PATH_SEP), "rb");
+    //The function returns 1 on success  or 0 on failure.
+    if (cdIsoFile == NULL) {
+        printf("Failed to open CD ISO file.\n");
+        exit(1);
+    }
+
         if (cdIsoFile == NULL || destination == NULL || startSector < 0 || length <= 0) {
             return; // Handle invalid arguments
         }
@@ -85,7 +90,7 @@ void loadRawSectorData(int startSector, int length, char* destination)
         }
 
         // Read sector data into destination buffer
-        int bytesRead = (int)al_fread(cdIsoFile, destination, length);
+       bytesRead = (int)al_fread(cdIsoFile, destination, length);
         if (bytesRead != length) {
             printf("Error reading sector data: expected %d bytes, got %d bytes\n", length, bytesRead);
             printf("al_ferror: %s\n", al_ferrmsg(cdIsoFile));
@@ -94,7 +99,7 @@ void loadRawSectorData(int startSector, int length, char* destination)
         cdReadStartSector = startSector;
         cdReadByteCount = length;
         cdReadTargetAddr = destination;
-        cdState = 1;
+		al_fclose(cdIsoFile);   
 
 }
 
@@ -104,9 +109,7 @@ void loadRawSectorData(int startSector, int length, char* destination)
 void loadCdPosTablefromCd(void)
 
 {
-	CdInit();
 	loadRawSectorData(0x17, 0x6190, (char*)&cdPosDatTable);
-    WaitForCdIdle(0);
 	return;
 }
 
@@ -128,47 +131,25 @@ int loadByFileIdGroupId(int fileIndex, int resourceType, char* destBuffer, int m
     }
     getCdFileSectorInfo(&info, fileIndex, resourceType);
     if ((maxSize == 0) || (info.fileLength <= maxSize)) {
-        SetCdBusyStatus(1);
         loadRawSectorData(info.startSector, info.fileLength, destBuffer);
-        WaitForCdIdle(0);
+
     }
     //else {
     //    intToAscii(fileIndex, fileNumStr, 10);
     //    intToAscii(resourceType, resourceTypeStr, 10);
     //    reportIssue("File Size Over \n", "FileNum = ", fileNumStr, "\nUser ID = ", resourceTypeStr);
-    //    sectorSize = 0;
+    //    info.fileLength = 0;
     //}
-    //return sectorSize;
+    return info.fileLength;
 }
 
 
 
-bool WaitForCdIdle(int nonBlocking)
+
+int isDebugDisabled(void)
 
 {
-    bool cdBusy;
-
-    if (nonBlocking == 0) {
-        cdBusy = false;
-        if (cdState != 0) {
-            do {
-                ProcessCdReadStateMachine();
-                cdBusy = false;
-            } while (cdState != 0);
-        }
-    }
-    else {
-        cdBusy = cdState != 0;
-    }
-    return cdBusy;
-}
-
-
-
-int isDebugAllowed(void)
-
-{
-	return -1; // -1 = Retail Mode (not allowed an locked down) 
+	return true; // Retail Mode (not allowed an locked down) 
 }
 
 
@@ -178,35 +159,6 @@ int getFileCountInGroup(int fileGroupIndex)
 {
     return fileGroupOffsetTable[fileGroupIndex + 2] -
         fileGroupOffsetTable[fileGroupIndex + 1];
-}
-
-
-
-///////////////////////////////
-// I AM HERE
-///////////////////////////////
-void SetCdBusyStatus(int newCdBusyStatus)
-{
-    //We hijack this function to open the CD ISO file.
-    cdIsoFile = al_fopen(al_path_cstr(resPath, ALLEGRO_NATIVE_PATH_SEP), "rb");
-    //The function returns 1 on success  or 0 on failure.
-    if (cdIsoFile == NULL) {
-        printf("Failed to open CD ISO file.\n");
-    }
-    else {
-        cdState = 1;
-    }
-	printf("SetCdBusyStatus called with status: %d\n", newCdBusyStatus);
-    
-
-}
-
-
-void resetCdTransferReadyFlag(void)
-
-{
-	cdTransferReady = 0;
-	return;
 }
 
 

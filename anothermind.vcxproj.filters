@@ -48,6 +48,9 @@
     <ClCompile Include="src\progdata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\tim.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\allegan.h">
@@ -78,6 +81,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\progdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -29,6 +29,7 @@
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\progdata.c" />
     <ClCompile Include="src\state.c" />
+    <ClCompile Include="src\tim.c" />
     <ClCompile Include="src\titlescreen.c" />
   </ItemGroup>
   <ItemGroup>
@@ -41,6 +42,7 @@
     <ClInclude Include="src\globals.h" />
     <ClInclude Include="src\progdata.h" />
     <ClInclude Include="src\state.h" />
+    <ClInclude Include="src\tim.h" />
     <ClInclude Include="src\titlescreen.h" />
   </ItemGroup>
   <ItemGroup>
@@ -101,6 +103,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Allegro_LibraryType>DynamicDebug</Allegro_LibraryType>
     <Allegro_AddonImage>true</Allegro_AddonImage>
+    <Allegro_AddonTTF>true</Allegro_AddonTTF>
+    <Allegro_AddonFont>true</Allegro_AddonFont>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Allegro_LibraryType>DynamicRelease</Allegro_LibraryType>
